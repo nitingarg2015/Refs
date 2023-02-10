@@ -1,4 +1,4 @@
-pip install grad-cam
+#pip install grad-cam
 
 from torch.nn import functional as F
 import cv2
@@ -41,6 +41,6 @@ def plot_grad_images(model, target_layers, data_images, pred_labels, target_labe
         plt.subplot(2, 5, index)
         visualization = show_cam_on_image(rgb_imgs[index - 1], grayscale_cams[index - 1, :], use_rgb=True)
         plt.imshow(visualization)
-        title = "Target:" + str(classes[target_labels[index - 1]]) + "\nPredicted:" + str(
-            classes[pred_labels[index - 1]])
+        title = "Target:" + str(cifar10_labels_dict[target_labels[index - 1]]) + "\nPredicted:" + str(
+            cifar10_labels_dict[pred_labels[index - 1]])
         plt.title(title)
