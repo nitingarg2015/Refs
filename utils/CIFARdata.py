@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 import cv2
 import torchvision
 import albumentations as A
+from albumentations.pytorch import ToTensorV2
 
 class TrainSet(torchvision.datasets.CIFAR10):
     def __init__(self, root="~/data/cifar10", train=True, download=True, transform=None):
