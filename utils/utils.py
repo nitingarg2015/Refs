@@ -1,67 +1,10 @@
 '''
 Contains following functions:
-Define classes for CIFAR train and test datasets
-load_CIFAR - for loading CIFAR dataset
 get_miss_classified - to retrieve miss classified images
 getFractionsMissed - to retried fractions missed by each class in the dataset
 plot_LossAndAcc - plot train/test loss and accuracies
 get_mean_and_std - returns mean and std of the dataset
 '''
-
-import torch
-import torch.nn as nn
-from torchvision import datasets, transforms
-import matplotlib.pyplot as plt
-import cv2
-import torchvision
-
-class TrainSet(torchvision.datasets.CIFAR10):
-    def __init__(self, root="~/data/cifar10", train=True, download=True, transform=None):
-        super().__init__(root=root, train=True, download=download, transform=transform)
-
-    def __getitem__(self, index):
-        image, label = self.data[index], self.targets[index]
-
-        if self.transform is not None:
-            transformed = self.transform(image=image)
-            image = transformed["image"]
-
-        return image, label
-
-class TestSet(torchvision.datasets.CIFAR10):
-    def __init__(self, root="~/data/cifar10", train=True, download=True, transform=None):
-        super().__init__(root=root, train=False, download=download, transform=transform)
-
-    def __getitem__(self, index):
-        image, label = self.data[index], self.targets[index]
-
-        if self.transform is not None:
-            transformed = self.transform(image=image)
-            image = transformed["image"]
-
-        return image, label
-
-
-def load_CIFAR(transform, train=True, batch_size=128):
-    cv2.setNumThreads(0)
-    cv2.ocl.setUseOpenCL(False)
-
-    if train == True:
-
-        dataset = TrainSet(transform=transform)
-
-        data_loader = torch.utils.data.DataLoader(
-            dataset, batch_size=batch_size, shuffle=True)
-    else:
-        dataset = TrainSet(transform=transform)
-
-        data_loader = torch.utils.data.DataLoader(
-            dataset, batch_size=batch_size, shuffle=True)
-
-    classes = ('plane', 'car', 'bird', 'cat',
-               'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
-
-    return classes, data_loader
 
 ### Functions to plot misclassified images
 
