@@ -21,8 +21,46 @@ Outputs provided for all incorrect predictions, where length of each list = numb
 '''
 import torch
 import collections
+import matplotlib.pyplot as plt
 
-def get_miss_classified(model, device, images, labels):
+'''
+function to return data points for plotting misses
+It accepts trained model, device and test_loader as inputs
+Outputs provided for all incorrect predictions, where length of each list = number of batches:
+1. data_images - List of torch tensors of images, if no mispredictions in a given batch then empty tensor 
+2. pred_labels - List of Predicted labels, if no mispredictions in a given batch then empty tensor 
+3. target_labels - Ground truth or target labels, if no mispredictions in a given batch then empty tensor 
+'''
+
+
+def get_mis_classified_byloader(model, device, data_loader):
+    model.eval()
+    missed_images = []  # will contain list of batches, for a given batch will return list of indices not predicted correctly
+    # empty list will indicate no mis predictions
+    pred_labels = []  # contains list of predicted labels by each batch
+    data_images = []  # contains list of images by each batch for plotting
+    target_labels = []  # contains list of target labels by batch
+    with torch.no_grad():
+        for data, target in data_loader:
+            data, target = data.to(device), target.to(device)
+            output = model(data)
+            # test_loss += F.nll_loss(output, target, reduction='sum').item()  # sum up batch loss
+            pred = output.argmax(dim=1, keepdim=True)  # get the index of the max log-probability
+            # missed_images.append(torch.where(torch.not_equal(pred.squeeze(),target).cpu()))
+            misses = torch.where(torch.not_equal(pred.squeeze(), target))
+            data_images.append(data[misses].cpu())
+            target_labels.append(target[misses].cpu())
+            pred_labels.append(pred[misses].cpu())
+
+    pred_labels = [x.item() for item in pred_labels for x in item]
+    target_labels = [x.item() for item in target_labels for x in item]
+    data_images = [x for item in data_images for x in item]
+
+    return data_images, pred_labels, target_labels
+
+
+
+def get_miss_classified_byimages(model, device, images, labels):
     #images to labels to GPU
     if not (images.is_cuda):
         images = images.to(device)
@@ -87,6 +125,24 @@ def getFractionsMissed(model, device, test_loader):
 
     return fractions_dict
 
+
+def plot_misclassified(image_data, targeted_labels, predicted_labels, classes, no_images):
+    no_images = min(no_images, len(predicted_labels))
+
+    figure = plt.figure(figsize=(12, 5))
+
+    for index in range(1, no_images + 1):
+        image = denormalize(image_data[index - 1]).numpy().transpose(1, 2, 0)
+        plt.subplot(2, 5, index)
+
+        plt.imshow(image)
+        plt.tick_params(left=False, right=False, labelleft=False,
+                        labelbottom=False, bottom=False)
+        title = "Target:" + str(classes[targeted_labels[index - 1]]) + "\nPredicted:" + str(
+            classes[predicted_labels[index - 1]])
+        plt.title(title)
+
+
 def plot_LossAndAcc(train_acc,train_losses,test_acc,test_losses):
 
     # function for plotting test and training loss/ accuracy
@@ -121,3 +177,26 @@ def get_mean_and_std(dataset):
     mean.div_(len(dataset))
     std.div_(len(dataset))
     return mean, std
+
+import matplotlib.pyplot as plt
+import numpy as np
+import torchvision.transforms as T
+
+# functions to denormalize image
+
+def denormalize(image):
+    mean = [0.485, 0.456, 0.406]
+    std  = [0.229, 0.224, 0.225]
+    inv_transform= T.Compose([
+          T.Normalize(
+              mean = (-1 * np.array(mean) / np.array(std)).tolist(),
+              std = (1 / np.array(std)).tolist()
+          )])
+
+    return inv_transform(image)
+
+#function to show image
+def imshow(img):
+    img = denormalize(img)     # unnormalize
+    npimg = img.numpy()
+    plt.imshow(np.transpose(npimg, (1, 2, 0)))
