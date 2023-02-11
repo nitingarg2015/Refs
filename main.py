@@ -44,7 +44,7 @@ def train_model(model, train_loader, test_loader, device, epochs=2):
         train_acc = 100. * correct / len(train_loader.dataset)
 
         #accumulate training losses & accuracy for plotting
-        train_losses.append(running_loss)
+        train_losses.append(running_loss/len(train_loader))
         train_acc_all.append(train_acc)
 
         print("Epoch: ", epoch, "Learning Rate: ", optimizer.param_groups[0]["lr"])
