@@ -1,9 +1,14 @@
 '''
 Contains following functions:
-get_miss_classified - to retrieve miss classified images
-getFractionsMissed - to retried fractions missed by each class in the dataset
+
+get_mis_classified_byloader(model, device, data_loader) - accepts input as data loader
+get_miss_classified_byimages(model, device, images, labels) - accepts images as a tensor of shape (B, C, H, W) 
+getFractionsMissed - to retrieve fractions missed by each class in the dataset
+plot_misclassified(image_data, targeted_labels, predicted_labels, classes, no_images) - to plot mis classified images
 plot_LossAndAcc - plot train/test loss and accuracies
 get_mean_and_std - returns mean and std of the dataset
+denormalize(image) - to denormalize an image
+imshow(img) - to plot an image
 '''
 
 ### Functions to plot misclassified images
