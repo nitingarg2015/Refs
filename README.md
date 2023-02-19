@@ -32,5 +32,6 @@ functions for loading CIFAR data has been defined. This uses Albumentations pack
  Returns data loader as per requirements
 
 ## main  
-main_ass7 - contains functions to train and test the model for assignment 7
+main_ass7 - contains functions to train and test the model for assignment 7  
+
 main_ass8 - contains functions to train and test the model for assignment 8
