@@ -1,93 +1,108 @@
 from tqdm import tqdm
-import torch
-
 import torch.optim as optim
-from torch.optim.lr_scheduler import StepLR  # Import your choice of scheduler here
+from torchvision import datasets, transforms
+import torch
+import torch.nn.functional as F
+import torchvision
+from torchsummary import summary
+import numpy as np
+from torch.optim.lr_scheduler import StepLR, OneCycleLR
+from torch.optim import Adam
+from torch.optim import SGD
 
-def train_model(model, train_loader, test_loader, device, criterion, optimizer, scheduler, epochs=2):
 
-    train_losses = []
-    test_losses = []
-    train_acc_all = []
-    test_acc_all = []
-    
-    torch.autograd.set_detect_anomaly(True)
-    for epoch in range(epochs):  # loop over the dataset multiple times
+def train(model, device, train_loader, optimizer, epoch, criterion, scheduler, lr_trend, lambda_l1=0):
+    model.train()
+    pbar = tqdm(train_loader)
+    correct = 0
+    processed = 0
+    train_loss = 0
 
-        running_loss = 0.0
-        correct = 0.0
+    for batch_idx, (data, target) in enumerate(pbar):
+        # get samples
+        data, target = data.to(device), target.to(device)
 
-        for i, data in enumerate(train_loader, 0):
-            # get the inputs
-            inputs, labels = data
-            inputs = inputs.to(device)
-            labels = labels.to(device)
+        # Init
+        optimizer.zero_grad()
+        # In PyTorch, we need to set the gradients to zero before starting to do backpropragation because PyTorch accumulates the gradients on subsequent backward passes.
+        # Because of this, when you start your training loop, ideally you should zero out the gradients so that you do the parameter update correctly.
 
-            # zero the parameter gradients
-            optimizer.zero_grad()
+        # Predict
+        y_pred = model(data)
 
-            # forward + backward + optimize
-            outputs = model(inputs)
-            loss = criterion(outputs, labels)
-            loss.backward()
-            optimizer.step()
-            scheduler.step()
-            # print statistics
-            running_loss += loss.item()
+        # Calculate loss
+        loss = criterion(y_pred, target)
 
-            output = model(inputs)
-            pred = output.argmax(dim=1, keepdim=True)  # get the index of the max log-probability
-            correct += pred.eq(labels.view_as(pred)).sum().item()
+        if (lambda_l1 > 0):
+            l1 = 0
+            for p in model.parameters():
+                l1 = l1 + p.abs().sum()
+            loss = loss + lambda_l1 * l1
 
-        train_acc = 100. * correct / len(train_loader.dataset)
+        train_loss += loss.item()
 
-        #accumulate training losses & accuracy for plotting
-        train_losses.append(running_loss/len(train_loader))
-        train_acc_all.append(train_acc)
+        # Backpropagation
+        loss.backward()
+        optimizer.step()
 
-        print("Epoch: ", epoch, "Learning Rate: ", optimizer.param_groups[0]["lr"])
-        print('\nTrain set: Average loss: {:.4f}, Accuracy: {}/{} ({:.2f}%)\n'.format(
-            loss, correct, len(train_loader.dataset), train_acc))
+        # updating LR
+        if scheduler:
+            if not isinstance(scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
+                scheduler.step()
+                lr_trend.append(scheduler.get_last_lr()[0])
+        # Update pbar-tqdm
 
-        test_loss, test_acc = test(model, device, test_loader)
+        pred = y_pred.argmax(dim=1, keepdim=True)  # get the index of the max log-probability
+        correct += pred.eq(target.view_as(pred)).sum().item()
 
-        # accumulate test losses & accuracy for plotting
-        test_losses.append(test_loss)
-        test_acc_all.append(test_acc)
+    train_acc = 100 * correct / len(train_loader.dataset)
 
-        # increment learning rate
-        #scheduler.step()
+    print(
+        f'\nAverage Training Loss={train_loss / len(train_loader.dataset)}, Accuracy={100 * correct / len(train_loader.dataset)}')
 
-    print('Finished Training')
+    return train_loss, train_acc
 
-    return model, train_losses, train_acc_all, test_losses, test_acc_all
 
-def test(model, device, test_loader):
-    '''
-    test function taken inputs as pre defined model, device, test_loader (dataloader)
-    It returns the following: test loss, test accuracy for that epoch
-    '''
-    criterion = torch.nn.CrossEntropyLoss()
-
+def test(model, device, test_loader, criterion):
     model.eval()
-    loss = 0
+    test_loss = 0
     correct = 0
     with torch.no_grad():
         for data, target in test_loader:
             data, target = data.to(device), target.to(device)
             output = model(data)
-
-            loss += criterion(output, target).item()  # sum up batch loss
+            test_loss += criterion(output, target).item()  # sum up batch loss
             pred = output.argmax(dim=1, keepdim=True)  # get the index of the max log-probability
             correct += pred.eq(target.view_as(pred)).sum().item()
 
-    loss /= len(test_loader.dataset)
+    test_loss /= len(test_loader.dataset)
 
-    print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.2f}%)\n'.format(
-        loss, correct, len(test_loader.dataset),
+    print('Test set: Average loss: {:.4f}, Accuracy: {}/{} ({:.2f}%)\n'.format(
+        test_loss, correct, len(test_loader.dataset),
         100. * correct / len(test_loader.dataset)))
+    test_acc = 100. * correct / len(test_loader.dataset)
 
-    acc = 100. * correct / len(test_loader.dataset)
+    return test_loss, test_acc
 
-    # return test loss and test accuracy
-    return loss, acc
+
+def fit_model(model, optimizer, criterion, trainloader, testloader, EPOCHS, device, lambda_l1=0, scheduler=None):
+    train_losses = []
+    train_acc_all = []
+    test_losses = []
+    test_acc_all = []
+
+    lr_trend = []
+
+    for epoch in range(EPOCHS):
+        print("EPOCH: {} (LR: {})".format(epoch + 1, optimizer.param_groups[0]['lr']))
+        train_loss, train_acc = train(model, device, trainloader, optimizer, epoch, criterion, scheduler, lr_trend,
+                                      lambda_l1)
+
+        test_loss, test_acc = test(model, device, testloader, criterion)
+
+        train_losses.append(train_loss / len(train_loader.dataset))
+        train_acc_all.append(train_acc)
+        test_losses.append(test_loss)
+        test_acc_all.append(test_acc)
+
+    return model, train_losses, train_acc_all, test_losses, test_acc_all
