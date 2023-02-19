@@ -221,7 +221,7 @@ def find_lr(model, optimizer, criterion, data_loader, device, end_lr, num_iter):
         num_iter
     """
     lr_finder = LRFinder(model, optimizer, criterion, device="cuda")
-    lr_finder.range_test(train_loader, end_lr=10, num_iter=100, step_mode="exp")
+    lr_finder.range_test(data_loader, end_lr=10, num_iter=100, step_mode="exp")
     lr_finder.plot()
 
     min_loss = min(lr_finder.history['loss'])
