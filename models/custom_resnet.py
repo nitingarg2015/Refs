@@ -53,15 +53,15 @@ class LayeredBlock(nn.Module):
 
 
 class CustomResNet(nn.Module):
-    def __init__(self, p=0.0, num_classes=10):
+    def __init__(self, dropout = 0.0, num_classes=10):
         super(CustomResNet, self).__init__()
         self.in_planes = 64
-        self.p = p
+        self.dropout = dropout
 
-        self.conv = ConvBlock(3, 64, 1, p)
-        self.layer1 = LayeredBlock(64, 128, 1, p)
-        self.layer2 = TransitionBlock(128, 256, 1, p)
-        self.layer3 = LayeredBlock(256, 512, 1, p)
+        self.conv = ConvBlock(3, 64, 1, dropout)
+        self.layer1 = LayeredBlock(64, 128, 1, dropout)
+        self.layer2 = TransitionBlock(128, 256, 1, dropout)
+        self.layer3 = LayeredBlock(256, 512, 1, dropout)
         self.max_pool = nn.MaxPool2d(4, 4)
         self.linear = nn.Linear(512, num_classes)
 
@@ -74,8 +74,8 @@ class CustomResNet(nn.Module):
         out = out.view(out.size(0), -1)
         out = self.linear(out)
         return F.log_softmax(out)
-def cusResNet():
-    return CustomResNet()
+def cusResNet(dropout = 0.05, num_classes=10):
+    return CustomResNet(dropout, num_classes)
 
 
 def test():
