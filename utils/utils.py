@@ -226,7 +226,7 @@ def find_lr(model, optimizer, criterion, data_loader, device, end_lr, num_iter):
 
     min_loss = min(lr_finder.history['loss'])
     max_ler_rate = lr_finder.history['lr'][np.argmin(lr_finder.history['loss'], axis=0)]
-    print("Max LR is {}".format(ler_rate))
+    print("Max LR is {}".format(max_ler_rate))
     min_ler_rate = max_ler_rate/ 10
 
     # minLR is MaxLR/10
