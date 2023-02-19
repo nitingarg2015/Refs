@@ -4,10 +4,7 @@ import torch
 import torch.optim as optim
 from torch.optim.lr_scheduler import StepLR  # Import your choice of scheduler here
 
-def train_model(model, train_loader, test_loader, device, epochs=2):
-    criterion = torch.nn.CrossEntropyLoss()
-    optimizer = optim.SGD(model.parameters(), lr=0.1, momentum=0.9)
-    scheduler = StepLR(optimizer, step_size=10, gamma=0.1)
+def train_model(model, train_loader, test_loader, device, criterion, optimizer, scheduler, epochs=2):
 
     train_losses = []
     test_losses = []
@@ -34,7 +31,7 @@ def train_model(model, train_loader, test_loader, device, epochs=2):
             loss = criterion(outputs, labels)
             loss.backward()
             optimizer.step()
-
+            scheduler.step()
             # print statistics
             running_loss += loss.item()
 
@@ -59,7 +56,7 @@ def train_model(model, train_loader, test_loader, device, epochs=2):
         test_acc_all.append(test_acc)
 
         # increment learning rate
-        scheduler.step()
+        #scheduler.step()
 
     print('Finished Training')
 

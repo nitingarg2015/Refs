@@ -205,3 +205,31 @@ def imshow(img):
     img = denormalize(img)     # unnormalize
     npimg = img.numpy()
     plt.imshow(np.transpose(npimg, (1, 2, 0)))
+
+from torch_lr_finder import LRFinder
+import numpy as np
+
+def find_lr(model, optimizer, criterion, data_loader, device, end_lr, num_iter):
+    """Find learning rate for using One Cyclic LRFinder and plot
+    Args:
+        net (instace): torch instace of defined model
+        optimizer (instance): optimizer to be used
+        criterion (instance): criterion to be used for calculating loss
+        train_loader (instance): torch dataloader instace for trainig set
+        device
+        end_lr
+        num_iter
+    """
+    lr_finder = LRFinder(model, optimizer, criterion, device="cuda")
+    lr_finder.range_test(train_loader, end_lr=10, num_iter=100, step_mode="exp")
+    lr_finder.plot()
+
+    min_loss = min(lr_finder.history['loss'])
+    max_ler_rate = lr_finder.history['lr'][np.argmin(lr_finder.history['loss'], axis=0)]
+    print("Max LR is {}".format(ler_rate))
+    min_ler_rate = max_ler_rate/ 10
+
+    # minLR is MaxLR/10
+    lr_finder.reset()
+
+    return min_ler_rate, max_ler_rate
