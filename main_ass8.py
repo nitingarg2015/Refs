@@ -85,7 +85,7 @@ def test(model, device, test_loader, criterion):
     return test_loss, test_acc
 
 
-def fit_model(model, optimizer, criterion, train_loader, test_loader, EPOCHS, device, lambda_l1=0, scheduler=None):
+def fit_model(model, optimizer, criterion, trainloader, testloader, EPOCHS, device, lambda_l1=0, scheduler=None):
     train_losses = []
     train_acc_all = []
     test_losses = []
@@ -98,9 +98,9 @@ def fit_model(model, optimizer, criterion, train_loader, test_loader, EPOCHS, de
         train_loss, train_acc = train(model, device, trainloader, optimizer, epoch, criterion, scheduler, lr_trend,
                                       lambda_l1)
 
-        test_loss, test_acc = test(model, device, test_loader, criterion)
+        test_loss, test_acc = test(model, device, testloader, criterion)
 
-        train_losses.append(train_loss / len(train_loader.dataset))
+        train_losses.append(train_loss / len(trainloader.dataset))
         train_acc_all.append(train_acc)
         test_losses.append(test_loss)
         test_acc_all.append(test_acc)
