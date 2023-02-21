@@ -88,16 +88,19 @@ class AttentionNet(nn.Module):
 
         self.conv = ConvNet(dropout=self.dropout)
 
-        self.ultimus = Ultimus(self.in_nodes, self.d_k, self.dropout)
+        self.ultimus1 = Ultimus(self.in_nodes, self.d_k, self.dropout)
+        self.ultimus2 = Ultimus(self.in_nodes, self.d_k, self.dropout)
+        self.ultimus3 = Ultimus(self.in_nodes, self.d_k, self.dropout)
+        self.ultimus4 = Ultimus(self.in_nodes, self.d_k, self.dropout)
 
         self.fc = nn.Linear(self.in_nodes, self.no_classes)
 
     def forward(self, x):
         x = self.conv(x)
-        x = self.ultimus(x)
-        x = self.ultimus(x)
-        x = self.ultimus(x)
-        x = self.ultimus(x)
+        x = self.ultimus1(x)
+        x = self.ultimus2(x)
+        x = self.ultimus3(x)
+        x = self.ultimus4(x)
 
         x = self.fc(x)
 
