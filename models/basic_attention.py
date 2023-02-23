@@ -1,18 +1,10 @@
-'''ResNet in PyTorch.
-Code pulled from https://github.com/kuangliu/pytorch-cifar
-Reference:
-[1] Kaiming He, Xiangyu Zhang, Shaoqing Ren, Jian Sun
-    Deep Residual Learning for Image Recognition. arXiv:1512.03385
+'''
+Ultimus in PyTorch
 '''
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import math
-
-# CNN model definition
-import torch.nn as nn
-import torch.nn.functional as F
-
 
 class ConvNet(nn.Module):
     def __init__(self, dropout=0.1):
@@ -20,25 +12,25 @@ class ConvNet(nn.Module):
         self.dropout = dropout
 
         self.conv1 = nn.Sequential(
-            nn.Conv2d(3, 16, 3, padding=1),  # input: 3*32*32, output: 16*32*32, RF: 3*3
+            nn.Conv2d(3, 16, 3, stride = 2, padding=1),  # input: 3*32*32, output: 16*16*16, RF: 3*3
             nn.BatchNorm2d(16),
             nn.Dropout(self.dropout)
         )
 
         self.conv2 = nn.Sequential(
-            nn.Conv2d(16, 32, 3, padding=1),  # input: 16*32*32, output: 32*32*32, RF: 5*5
+            nn.Conv2d(16, 32, 3, stride = 2, padding=1),  # input: 16*16*16, output: 32*8*8, RF: 7*7
             nn.BatchNorm2d(32),
             nn.Dropout(self.dropout)
         )
 
         self.conv3 = nn.Sequential(
-            nn.Conv2d(32, 48, 3, padding=1),  # input: 32*32*32, output: 48*32*32, RF: 7*7
+            nn.Conv2d(32, 48, 3, stride = 2, padding=1),  # input: 32*8*8, output: 48*4*4, RF: 15*15
             nn.BatchNorm2d(48),
             nn.Dropout(self.dropout)
         )
 
         self.GAP = nn.Sequential(
-            nn.AvgPool2d(32, 32),  # input: 16*7*7, output: 16*3*3, RF: 38*38
+            nn.AvgPool2d(4, 4),  # input: 48*4*4, output: 48*1*1, RF: 15*15
         )
 
     def forward(self, x):
@@ -69,8 +61,8 @@ class Ultimus(nn.Module):
         V = F.relu(self.values(x))
         K = F.relu(self.keys(x))
 
-        SA = torch.mm(torch.transpose(Q, 0, 1), K) / math.sqrt(self.d_k)
-        SA_soft = F.softmax(SA, dim=1)
+        SA = torch.mm(torch.transpose(Q, 0, 1), K)
+        SA_soft = F.softmax(SA, dim=0)/ math.sqrt(self.d_k)
         ATT = torch.mm(V, SA_soft)
         out = F.relu(self.fc1(ATT))
 
